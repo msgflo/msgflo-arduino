@@ -138,16 +138,14 @@ class PubSubClientEngine : public Engine, public Publisher {
     }
 
     void callback(const char* topic, byte* payload, unsigned int length) {
-        Serial.print("got data on: ");
-        Serial.println(topic);
         for (auto &p : inPorts) {
             if (p.queue == topic) {
-                //p.callback(payload, length);
+                p.callback(payload, length);
             }
         }
     }
 
-    void onConnected() {
+    void sendDiscovery() {
       // fbp {"protocol":"discovery","command":"participant","payload":{"component":"dlock13/DoorLock","label":"Open the door","icon":"lightbulb-o","inports":[{"queue":"/bitraf/door/boxy4/open","type":"object","id":"open"}],"outports":[],"role":"boxy4","id":"boxy4"}}
       String discoveryMessage =
         "{"
@@ -176,6 +174,17 @@ class PubSubClientEngine : public Engine, public Publisher {
       Serial.println("discoveryMessage");
       Serial.println(discoveryMessage);
       mqtt->publish(discoveryTopic, discoveryMessage.c_str(), false);
+    }
+
+    void subscribeInPorts() {
+        for (auto &p : inPorts) {
+            mqtt->subscribe(p.queue.c_str());
+        }
+    }
+
+    void onConnected() {
+        subscribeInPorts();
+        sendDiscovery();
     }
 
     void loop() {
