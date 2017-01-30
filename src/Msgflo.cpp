@@ -103,15 +103,12 @@ const char *discoveryTopic = "fbp";
 
 class PubSubClientEngine : public Engine, public Publisher {
 
-    const String component;
-    const String label;
-    const String icon;
-
     PubSubClient *mqtt;
     const char *clientId;
     const char *username;
     const char *password;
 
+    const Participant participant;
     std::vector<PubSubOutPort> outPorts;
     std::vector<PubSubInPort> inPorts;
 
@@ -120,10 +117,13 @@ class PubSubClientEngine : public Engine, public Publisher {
       mqtt->publish(queue.c_str(), payload.c_str());
     }
 
-    PubSubClientEngine(const String &component, const String &label, const String &icon,
-                       PubSubClient *mqtt, const char *clientId, const char *username, const char *password):
-      component(component), label(label), icon(icon), mqtt(mqtt), clientId(clientId),
-      username(username), password(password) {
+    PubSubClientEngine(const Participant &p, PubSubClient *mqtt, const char *id, const char *username, const char *password):
+        participant(p),
+        mqtt(mqtt),
+        clientId(id),
+        username(username),
+        password(password)
+    {
       mqtt->setCallback(&globalCallback);
     }
 
@@ -145,7 +145,7 @@ class PubSubClientEngine : public Engine, public Publisher {
         }
     }
 
-    bool sendDiscovery() {
+    bool sendDiscovery(const Participant *p) {
       // fbp {"protocol":"discovery","command":"participant","payload":{"component":"dlock13/DoorLock","label":"Open the door","icon":"lightbulb-o","inports":[{"queue":"/bitraf/door/boxy4/open","type":"object","id":"open"}],"outports":[],"role":"boxy4","id":"boxy4"}}
       String discoveryMessage =
         "{"
@@ -153,11 +153,16 @@ class PubSubClientEngine : public Engine, public Publisher {
         "\"command\": \"participant\","
         "\"payload\": {\"component\": \"";
 
-      discoveryMessage += component;
+      discoveryMessage += p->component;
       discoveryMessage += "\", \"label\": \"";
-      discoveryMessage += label;
+      discoveryMessage += p->label;
       discoveryMessage += "\", \"icon\": \"";
-      discoveryMessage += icon;
+      discoveryMessage += p->icon;
+
+      discoveryMessage += "\", \"id\": \"";
+      discoveryMessage += p->id;
+      discoveryMessage += "\", \"role\": \"";
+      discoveryMessage += p->role;
 
       discoveryMessage += "\", \"outports\": [";
       for (auto &p : outPorts) {
@@ -191,7 +196,7 @@ class PubSubClientEngine : public Engine, public Publisher {
 
     void onConnected() {
         subscribeInPorts();
-        const bool success = sendDiscovery();
+        const bool success = sendDiscovery(&participant);
         if (!success) {
             Serial.println("failed to send Msgflo discovery");
             Serial.printf("limit = %d\n", MQTT_MAX_PACKET_SIZE);
@@ -224,17 +229,15 @@ static void globalCallback(const char* topic, byte* payload, unsigned int length
   instance->callback(topic, payload, length);
 }
 
-Engine *createPubSubClientEngine(
-  const String &component,
-  const String &label,
-  const String &icon,
-  PubSubClient* mqtt, const char *clientId, const char *username, const char *password) {
+Engine *createPubSubClientEngine(const Participant &part, PubSubClient* mqtt,
+    const char *clientId, const char *username, const char *password) {
+
   if (instance != nullptr) {
     Serial.println("Double initialization of msgflo engine.");
     return instance;
   }
 
-  instance = new (instanceBytes) PubSubClientEngine(component, label, icon, mqtt, clientId, username, password);
+  instance = new (instanceBytes) PubSubClientEngine(part, mqtt, clientId, username, password);
   return instance;
 }
 

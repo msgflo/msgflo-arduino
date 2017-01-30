@@ -5,6 +5,14 @@
 
 namespace msgflo {
 
+struct Participant {
+    const String component;
+    const String label;
+    const String icon;
+    const String role;
+    const String id;
+};
+
 class OutPort {
   public:
     virtual void send(const String &payload) = 0;
@@ -34,11 +42,8 @@ class Engine {
 namespace msgflo {
 namespace pubsub {
 
-Engine* createPubSubClientEngine(
-  const String &component,
-  const String &label,
-  const String &icon,
-  PubSubClient *client, const char *clientId, const char *username, const char *password);
+Engine* createPubSubClientEngine(const Participant &p, PubSubClient *client,
+    const char *clientId, const char *username, const char *password);
 
 }; // namespace pubsub
 }; // namespace msgflo
