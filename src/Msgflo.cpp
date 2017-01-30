@@ -145,13 +145,14 @@ class PubSubClientEngine : public Engine, public Publisher {
         }
     }
 
-    void sendDiscovery() {
+    bool sendDiscovery() {
       // fbp {"protocol":"discovery","command":"participant","payload":{"component":"dlock13/DoorLock","label":"Open the door","icon":"lightbulb-o","inports":[{"queue":"/bitraf/door/boxy4/open","type":"object","id":"open"}],"outports":[],"role":"boxy4","id":"boxy4"}}
       String discoveryMessage =
         "{"
         "\"protocol\": \"discovery\","
         "\"command\": \"participant\","
         "\"payload\": {\"component\": \"";
+
       discoveryMessage += component;
       discoveryMessage += "\", \"label\": \"";
       discoveryMessage += label;
@@ -171,9 +172,15 @@ class PubSubClientEngine : public Engine, public Publisher {
       discoveryMessage += "]";
 
       discoveryMessage += "}}";
-      Serial.println("discoveryMessage");
-      Serial.println(discoveryMessage);
-      mqtt->publish(discoveryTopic, discoveryMessage.c_str(), false);
+      Serial.print("discoveryMessage: ");
+      Serial.print(discoveryMessage.length());
+      Serial.print(" :");
+      //Serial.println(discoveryMessage);
+
+      // FIXME: due to https://github.com/knolleary/pubsubclient/issues/110 this is pretty likely,
+      // needs a proper fix for when compiling with Arduino IDE..
+      const bool success = mqtt->publish(discoveryTopic, (const uint8_t*)discoveryMessage.c_str(), discoveryMessage.length(), false);
+      return success;
     }
 
     void subscribeInPorts() {
@@ -184,7 +191,11 @@ class PubSubClientEngine : public Engine, public Publisher {
 
     void onConnected() {
         subscribeInPorts();
-        sendDiscovery();
+        const bool success = sendDiscovery();
+        if (!success) {
+            Serial.println("failed to send Msgflo discovery");
+            Serial.printf("limit = %d\n", MQTT_MAX_PACKET_SIZE);
+        }
     }
 
     void loop() {
