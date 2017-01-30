@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <functional>
 
 namespace msgflo {
 
@@ -9,11 +10,19 @@ class OutPort {
     virtual void send(const String &payload) = 0;
 };
 
+typedef std::function<void (byte*, int)> InPortCallback;
+
+class InPort {
+  public:
+    // 
+};
+
 class Engine {
   protected:
     virtual ~Engine() {};
   public:
     virtual OutPort* addOutPort(const String &id, const String &type, const String &queue) = 0;
+    virtual InPort* addInPort(const String &id, const String &type, const String &queue, InPortCallback callback) = 0;
 
     virtual void loop() = 0;
 };

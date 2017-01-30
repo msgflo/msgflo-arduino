@@ -74,6 +74,30 @@ struct PubSubOutPort : public OutPort {
     }
 };
 
+
+struct PubSubInPort : public InPort {
+  public:
+    const String id;
+    const String type;
+    const String queue;
+    const InPortCallback callback;
+
+    PubSubInPort(const String &id, const String &type, const String &queue, InPortCallback callback) :
+      id(id), type(type), queue(queue), callback(callback) {
+    }
+
+    void toJson(String &s) const {
+      s += "{\"id\": \"";
+      s += id;
+      s += "\", \"type\": \"";
+      s += type;
+      s += "\", \"queue\": \"";
+      s += queue;
+      s += "\"}";
+    }
+
+};
+
 static
 const char *discoveryTopic = "fbp";
 
@@ -89,6 +113,8 @@ class PubSubClientEngine : public Engine, public Publisher {
     const char *password;
 
     std::vector<PubSubOutPort> outPorts;
+    std::vector<PubSubInPort> inPorts;
+
   public:
     void send(const String &queue, const String &payload) {
       mqtt->publish(queue.c_str(), payload.c_str());
@@ -106,7 +132,19 @@ class PubSubClientEngine : public Engine, public Publisher {
       return &outPorts[outPorts.size() - 1];
     }
 
+    InPort* addInPort(const String &id, const String &type, const String &queue, InPortCallback callback) {
+      inPorts.emplace_back(id, type, queue, callback);
+      return &inPorts[inPorts.size() - 1];
+    }
+
     void callback(const char* topic, byte* payload, unsigned int length) {
+        Serial.print("got data on: ");
+        Serial.println(topic);
+        for (auto &p : inPorts) {
+            if (p.queue == topic) {
+                //p.callback(payload, length);
+            }
+        }
     }
 
     void onConnected() {
@@ -121,11 +159,20 @@ class PubSubClientEngine : public Engine, public Publisher {
       discoveryMessage += label;
       discoveryMessage += "\", \"icon\": \"";
       discoveryMessage += icon;
+
       discoveryMessage += "\", \"outports\": [";
       for (auto &p : outPorts) {
         p.toJson(discoveryMessage);
       }
-      discoveryMessage += "]}}";
+      discoveryMessage += "]";
+
+      discoveryMessage += "\", \"inports\": [";
+      for (auto &p : inPorts) {
+        p.toJson(discoveryMessage);
+      }
+      discoveryMessage += "]";
+
+      discoveryMessage += "}}";
       Serial.println("discoveryMessage");
       Serial.println(discoveryMessage);
       mqtt->publish(discoveryTopic, discoveryMessage.c_str(), false);
