@@ -168,9 +168,9 @@ class PubSubClientEngine : public Engine, public Publisher {
       for (auto &p : outPorts) {
         p.toJson(discoveryMessage);
       }
-      discoveryMessage += "]";
+      discoveryMessage += "],";
 
-      discoveryMessage += "\", \"inports\": [";
+      discoveryMessage += "\"inports\": [";
       for (auto &p : inPorts) {
         p.toJson(discoveryMessage);
       }
