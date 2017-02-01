@@ -112,6 +112,8 @@ class PubSubClientEngine : public Engine, public Publisher {
     std::vector<PubSubOutPort> outPorts;
     std::vector<PubSubInPort> inPorts;
 
+    long lastDiscoverySent; // milliseconds
+
   public:
     void send(const String &queue, const String &payload) {
       mqtt->publish(queue.c_str(), payload.c_str());
@@ -122,7 +124,8 @@ class PubSubClientEngine : public Engine, public Publisher {
         mqtt(mqtt),
         clientId(id),
         username(username),
-        password(password)
+        password(password),
+        lastDiscoverySent(0)
     {
       mqtt->setCallback(&globalCallback);
     }
@@ -205,6 +208,12 @@ class PubSubClientEngine : public Engine, public Publisher {
 
     void loop() {
       mqtt->loop();
+      const long currentTime = millis();
+      const long secondsSinceLastDiscovery = (currentTime - lastDiscoverySent)/1000;
+      if (secondsSinceLastDiscovery > participant.discoveryPeriod/3) {
+        sendDiscovery(&participant);
+        lastDiscoverySent = currentTime;
+      }
 
       if (!mqtt->connected()) {
         int state = mqtt->state();
