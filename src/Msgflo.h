@@ -6,11 +6,22 @@
 namespace msgflo {
 
 struct Participant {
-    const String component;
-    const String label;
-    const String icon;
-    const String role;
-    const String id;
+  const String component;
+  const String role;
+  String id; // if there can be multiple devices of the same role.
+  // Devices in same role must be equivalent, meaning it does not matter which one gets input message or produces output
+
+  String label; // human readable description
+  String icon; // name from http://fontawesome.io/icons/
+  int discoveryPeriod = 60; // seconds
+
+  Participant(const String &c, const String &r)
+    : component(c)
+    , role(r)
+    , id(r)
+  {
+  }
+
 };
 
 class OutPort {
