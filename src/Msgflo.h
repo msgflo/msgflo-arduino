@@ -56,6 +56,9 @@ namespace pubsub {
 Engine* createPubSubClientEngine(const Participant &p, PubSubClient *client,
     const char *clientId, const char *username, const char *password);
 
+Engine* createPubSubClientEngine(const Participant &p, PubSubClient *client,
+    const char *clientId);
+
 }; // namespace pubsub
 }; // namespace msgflo
 

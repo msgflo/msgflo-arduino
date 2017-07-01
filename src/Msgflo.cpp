@@ -220,7 +220,7 @@ class PubSubClientEngine : public Engine, public Publisher {
 
         Serial.print("Connecting...");
         // This is blocking
-        if (mqtt->connect(clientId, username, password)) {
+        if (connect()) {
           Serial.println("ok");
           onConnected();
         } else {
@@ -228,6 +228,14 @@ class PubSubClientEngine : public Engine, public Publisher {
           printMqttState(mqtt->state());
         }
       }
+    }
+private:
+    bool connect() {
+        if (username) {
+            return mqtt->connect(clientId, username, password);
+        } else {
+            return mqtt->connect(clientId);
+        }
     }
 };
 
@@ -248,6 +256,12 @@ Engine *createPubSubClientEngine(const Participant &part, PubSubClient* mqtt,
 
   instance = new (instanceBytes) PubSubClientEngine(part, mqtt, clientId, username, password);
   return instance;
+}
+
+Engine *createPubSubClientEngine(const Participant &part, PubSubClient* mqtt,
+    const char *clientId) {
+
+    return createPubSubClientEngine(part, mqtt, clientId, NULL, NULL);
 }
 
 };
