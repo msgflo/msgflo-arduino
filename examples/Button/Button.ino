@@ -8,7 +8,7 @@
 
 
 struct Config {
-  const String id = ""; // unused?
+  const String role = "mybutton";
 
   const int ledPin = 5;
   const int buttonPin = 2;
@@ -29,6 +29,8 @@ msgflo::Engine *engine;
 msgflo::OutPort *buttonPort;
 long nextButtonCheck = 0;
 
+const auto participant = msgflo::Participant("iot/Button", cfg.role);
+
 void setup() {
   Serial.begin(115200);
   delay(100);
@@ -42,16 +44,12 @@ void setup() {
   mqttClient.setServer(cfg.mqttHost, cfg.mqttPort);
   mqttClient.setClient(wifiClient);
 
-  String clientId = "bitraf-button-";
+  String clientId = cfg.role;
   clientId += WiFi.macAddress();
 
-  engine = msgflo::pubsub::createPubSubClientEngine(
-             "bitraf-iot/BlinkButton",
-             "Blinking Button",
-             "lightbulb-o",
-             &mqttClient, clientId.c_str(), cfg.mqttUsername, cfg.mqttPassword);
+  engine = msgflo::pubsub::createPubSubClientEngine(participant, &mqttClient, clientId.c_str(), cfg.mqttUsername, cfg.mqttPassword);
 
-  buttonPort = engine->addOutPort("button-event", "any", "bitraf/button/" + cfg.id + "/event");
+  buttonPort = engine->addOutPort("button-event", "any", cfg.role + "/event");
 
   Serial.printf("Led pin: %d\r\n", cfg.ledPin);
   Serial.printf("Button pin: %d\r\n", cfg.buttonPin);
