@@ -3,6 +3,16 @@
 #include <PubSubClient.h>
 #include <Msgflo.h>
 
+// Needed on some platforms because Msgflo makes use of std::function
+namespace std
+{
+void __throw_bad_function_call()
+{
+  Serial.println("bad function call throw, halting");
+  while(1) {};
+}
+}
+
 struct Config {
   const String component = "iot/EthernetButton";
   const String prefix = "public/";
