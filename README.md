@@ -1,19 +1,27 @@
 # msgflo-arduino
 
-[Arduino](https://www.arduino.cc/) library for easily exposing devices on [MQTT](), with [MsgFlo](https://msgflo.org) device discovery support.
+[Arduino](https://www.arduino.cc/) library for easily exposing devices on [MQTT](https://en.wikipedia.org/wiki/MQTT),
+with [MsgFlo](https://msgflo.org) device discovery support.
 MsgFlo allows you to visually connect devices using [Flowhub](https://flowhub.io), to easily build "IoT" systems
 like home or factory automation, interactive art installations or similar.
 
 ## Status
 
-Experimental.
+*Minimally useful*
 
-* API may still change
-* Testing on ESP8266 first
+* Tested on several ESP8266 boards, like NodeMCU, Wemos D1, Olimex MOD-WIFI-ESP8266.
+* Should work on all devices with `EthernetClient` support
 * Supports Arduino IDE 1.5+
+* Note: API may still change
+
+## Prerequisites
+
+[PubSubClient](https://github.com/knolleary/pubsubclient).
+
+Note: For discovery message you have to increase `MQTT_MAX_PACKET_SIZE` to 512 or 1024.
+This can only be done inside `PubSubClient.h`, until new [API is added](https://github.com/knolleary/pubsubclient/pull/282) for changing.
 
 ## Installing
-
 
 1. [Download](https://github.com/msgflo/msgflo-arduino/archive/master.zip)
 2. Unzip the archive
