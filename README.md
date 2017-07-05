@@ -1,5 +1,7 @@
 # msgflo-arduino
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/msgflo/msgflo-arduino.svg)](https://greenkeeper.io/)
+
 [Arduino](https://www.arduino.cc/) library for easily exposing devices on [MQTT](), with [MsgFlo](https://msgflo.org) device discovery support.
 MsgFlo allows you to visually connect devices using [Flowhub](https://flowhub.io), to easily build "IoT" systems
 like home or factory automation, interactive art installations or similar.
