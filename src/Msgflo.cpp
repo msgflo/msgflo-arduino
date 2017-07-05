@@ -50,10 +50,21 @@ class Publisher {
 
 struct PubSubOutPort : public OutPort {
   public:
-    const String id;
-    const String type;
-    const String queue;
+    String id;
+    String type;
+    String queue;
     Publisher *publisher;
+
+    PubSubOutPort& operator=(PubSubOutPort&& p) = default;
+
+    PubSubOutPort()
+        : publisher(nullptr)
+    {        
+    }
+
+    const bool valid() {
+        return publisher;
+    }
 
     PubSubOutPort(const String &id, const String &type, const String &queue, Publisher *publisher) :
       id(id), type(type), queue(queue), publisher(publisher) {
@@ -77,13 +88,27 @@ struct PubSubOutPort : public OutPort {
 
 struct PubSubInPort : public InPort {
   public:
-    const String id;
-    const String type;
-    const String queue;
-    const InPortCallback callback;
+    String id;
+    String type;
+    String queue;
+    InPortCallback callback;
+    bool _valid;
+
+    PubSubInPort(PubSubInPort&& p) = default;
+    PubSubInPort& operator=(PubSubInPort&& p) = default;
+
+    PubSubInPort& operator=(PubSubInPort& p) = default;
+
+    PubSubInPort()
+        : _valid(false) {
+    }
+
+    const bool valid() {
+        return _valid;
+    }
 
     PubSubInPort(const String &id, const String &type, const String &queue, InPortCallback callback) :
-      id(id), type(type), queue(queue), callback(callback) {
+      id(id), type(type), queue(queue), callback(callback), _valid(true) {
     }
 
     void toJson(String &s) const {
@@ -101,6 +126,8 @@ struct PubSubInPort : public InPort {
 static
 const char *discoveryTopic = "fbp";
 
+#define MAX_PORTS 5
+
 class PubSubClientEngine : public Engine, public Publisher {
 
     PubSubClient *mqtt;
@@ -109,8 +136,10 @@ class PubSubClientEngine : public Engine, public Publisher {
     const char *password;
 
     const Participant participant;
-    std::vector<PubSubOutPort> outPorts;
-    std::vector<PubSubInPort> inPorts;
+    std::array<PubSubOutPort, MAX_PORTS> outPorts;
+    int8_t lastOutPort;
+    std::array<PubSubInPort, MAX_PORTS> inPorts;
+    int8_t lastInPort;
 
     long lastDiscoverySent; // milliseconds
 
@@ -125,19 +154,31 @@ class PubSubClientEngine : public Engine, public Publisher {
         clientId(id),
         username(username),
         password(password),
-        lastDiscoverySent(0)
+        lastDiscoverySent(0),
+        lastOutPort(0),
+        lastInPort(0)
     {
       mqtt->setCallback(&globalCallback);
     }
 
     OutPort* addOutPort(const String &id, const String &type, const String &queue) {
-      outPorts.emplace_back(id, type, queue, this);
-      return &outPorts[outPorts.size() - 1];
+      if (lastOutPort < MAX_PORTS) {
+        const int port = lastOutPort++;
+        outPorts[port] = PubSubOutPort(id, type, queue, this);
+        return &outPorts[port];
+      } else {
+        return NULL;
+      }
     }
 
     InPort* addInPort(const String &id, const String &type, const String &queue, InPortCallback callback) {
-      inPorts.emplace_back(id, type, queue, callback);
-      return &inPorts[inPorts.size() - 1];
+      if (lastInPort < MAX_PORTS) {
+        const int port = lastInPort++;
+        inPorts[port] = PubSubInPort(id, type, queue, callback);
+        return &inPorts[port];
+      } else {
+        return NULL;
+      }
     }
 
     void callback(const char* topic, byte* payload, unsigned int length) {
@@ -168,22 +209,32 @@ class PubSubClientEngine : public Engine, public Publisher {
       discoveryMessage += p->role;
 
       discoveryMessage += "\", \"outports\": [";
-      for (auto &p : outPorts) {
-        p.toJson(discoveryMessage);
+      for (int i=0; i < outPorts.size(); i++) {
+        auto &p = outPorts[i];
+        if (p.valid()) {
+            if (i > 0) {
+                discoveryMessage += ",";
+            }
+            p.toJson(discoveryMessage);
+        }
       }
       discoveryMessage += "],";
 
       discoveryMessage += "\"inports\": [";
-      for (auto &p : inPorts) {
-        p.toJson(discoveryMessage);
+      for (int i=0; i < inPorts.size(); i++) {
+        auto &p = inPorts[i];
+        if (p.valid()) {
+            if (i > 0) {
+                discoveryMessage += ",";
+            }
+            p.toJson(discoveryMessage);
+        }
       }
       discoveryMessage += "]";
 
       discoveryMessage += "}}";
-      Serial.print("discoveryMessage: ");
-      Serial.print(discoveryMessage.length());
-      Serial.print(" :");
-      //Serial.println(discoveryMessage);
+      Serial.print("MsgFlo discovery message bytes: ");
+      Serial.println(discoveryMessage.length());
 
       // FIXME: due to https://github.com/knolleary/pubsubclient/issues/110 this is pretty likely,
       // needs a proper fix for when compiling with Arduino IDE..
@@ -193,7 +244,9 @@ class PubSubClientEngine : public Engine, public Publisher {
 
     void subscribeInPorts() {
         for (auto &p : inPorts) {
-            mqtt->subscribe(p.queue.c_str());
+            if (p.valid()) {
+                mqtt->subscribe(p.queue.c_str());
+            }
         }
     }
 
