@@ -29,7 +29,7 @@ msgflo::Engine *engine;
 msgflo::OutPort *buttonPort;
 long nextButtonCheck = 0;
 
-const auto participant = msgflo::Participant("iot/Button", cfg.role);
+auto participant = msgflo::Participant("iot/Button", cfg.role);
 
 void setup() {
   Serial.begin(115200);
@@ -40,6 +40,9 @@ void setup() {
 
   Serial.printf("Configuring wifi: %s\r\n", cfg.wifiSsid.c_str());
   WiFi.begin(cfg.wifiSsid.c_str(), cfg.wifiPassword.c_str());
+
+  // Provide a Font Awesome (http://fontawesome.io/icons/) icon for the component
+  participant.icon = "toggle-on";
 
   mqttClient.setServer(cfg.mqttHost, cfg.mqttPort);
   mqttClient.setClient(wifiClient);
