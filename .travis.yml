@@ -11,5 +11,6 @@ before_install:
 - cd arduino-1.8.1/hardware/esp8266com/esp8266/tools
 - python2 get.py
 - cd -
+- git clone https://github.com/knolleary/pubsubclient.git PubSubClient
 script:
 - ARDUINO=`pwd`/arduino-1.8.1 npm run build
