@@ -225,10 +225,8 @@ class PubSubClientEngine : public Engine, public Publisher {
       discoveryMessage += "]";
 
       discoveryMessage += "}}";
-      Serial.print("discoveryMessage: ");
-      Serial.print(discoveryMessage.length());
-      Serial.print(" :");
-      //Serial.println(discoveryMessage);
+      Serial.print("MsgFlo discovery message bytes: ");
+      Serial.println(discoveryMessage.length());
 
       // FIXME: due to https://github.com/knolleary/pubsubclient/issues/110 this is pretty likely,
       // needs a proper fix for when compiling with Arduino IDE..
