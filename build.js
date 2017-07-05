@@ -11,7 +11,8 @@ var builder = path.join(arduinoDir, 'arduino-builder');
 
 var prefs = "";
 if (board.indexOf('tivac') != -1) {
-  prefs = ' -prefs "runtime.tools.arm-none-eabi-gcc.path=/home/jon/.arduino15/packages/arduino/tools/arm-none-eabi-gcc/4.8.3-2014q1"';
+  var armGcc = path.join(arduinoDir, 'hardware/tools/arm-none-eabi-gcc/4.8.3-2014q1');
+  prefs = ' -prefs runtime.tools.arm-none-eabi-gcc.path=' + armGcc;
 }
 
 var cmd = builder + ' -compile ' + ' -verbose' +
