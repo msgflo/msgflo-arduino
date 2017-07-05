@@ -9,12 +9,19 @@ var arduinoDir = process.env.ARDUINO || process.env.HOME + "/arduino-1.8.1";
 var buildDir = path.join(path.dirname(sketch), 'builder');
 var builder = path.join(arduinoDir, 'arduino-builder');
 
+var prefs = "";
+if (board.indexOf('tivac') != -1) {
+  prefs = ' -prefs "runtime.tools.arm-none-eabi-gcc.path=/home/jon/.arduino15/packages/arduino/tools/arm-none-eabi-gcc/4.8.3-2014q1"';
+}
+
 var cmd = builder + ' -compile ' + ' -verbose' +
     " -hardware " + path.join(arduinoDir, 'hardware') +
     ' -tools ' + path.join(arduinoDir, 'tools-builder') +
     ' -tools ' + path.join(arduinoDir, 'hardware', 'tools') +
+    prefs +
     ' -libraries ' + './' +
     ' -fqbn ' + board +
     ' ' + sketch;
-    
+
+
 console.log(cmd);
