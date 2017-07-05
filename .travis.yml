@@ -19,4 +19,6 @@ before_install:
 - mkdir -p arduino-1.8.1/hardware/tools/arm-none-eabi-gcc
 - mv gcc-arm-none-eabi-4.8.3-2014q1 arduino-1.8.1/hardware/tools/arm-none-eabi-gcc/4.8.3-2014q1
 script:
-- ARDUINO=`pwd`/arduino-1.8.1 npm run build
+- export ARDUINO=`pwd`/arduino-1.8.1
+- npm run build
+- npm run build-tiva
