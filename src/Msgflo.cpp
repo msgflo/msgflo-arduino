@@ -209,16 +209,24 @@ class PubSubClientEngine : public Engine, public Publisher {
       discoveryMessage += p->role;
 
       discoveryMessage += "\", \"outports\": [";
-      for (auto &p : outPorts) {
+      for (int i=0; i < outPorts.size(); i++) {
+        auto &p = outPorts[i];
         if (p.valid()) {
+            if (i > 0) {
+                discoveryMessage += ",";
+            }
             p.toJson(discoveryMessage);
         }
       }
       discoveryMessage += "],";
 
       discoveryMessage += "\"inports\": [";
-      for (auto &p : inPorts) {
+      for (int i=0; i < inPorts.size(); i++) {
+        auto &p = inPorts[i];
         if (p.valid()) {
+            if (i > 0) {
+                discoveryMessage += ",";
+            }
             p.toJson(discoveryMessage);
         }
       }
