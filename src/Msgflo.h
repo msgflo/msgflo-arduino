@@ -1,6 +1,18 @@
 #pragma once
 
 #include <Arduino.h>
+
+// The min/max macros in Arduino breaks functional, which uses std::min and std::max
+// This may cause them to be undefined in user sketch.
+// Can then change the sketch to use _min() and _max(), or re-define it below the Msgflo.h include
+// https://github.com/esp8266/Arduino/issues/398
+#ifdef min
+#undef min
+#endif
+#ifdef max
+#undef max
+#endif
+
 #include <functional>
 
 namespace msgflo {

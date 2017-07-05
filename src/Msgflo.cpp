@@ -41,7 +41,12 @@ void printMqttState(int state) {
   }
 }
 
+// Crack inherited from PubSubClient
+#ifdef ESP8266
 static void globalCallback(const char* topic, byte* payload, unsigned int length);
+#else
+static void globalCallback(char* topic, byte* payload, unsigned int length);
+#endif
 
 class Publisher {
   public:
@@ -255,7 +260,8 @@ class PubSubClientEngine : public Engine, public Publisher {
         const bool success = sendDiscovery(&participant);
         if (!success) {
             Serial.println("failed to send Msgflo discovery");
-            Serial.printf("limit = %d\n", MQTT_MAX_PACKET_SIZE);
+            Serial.print("limit = ");
+            Serial.println(MQTT_MAX_PACKET_SIZE);
         }
     }
 
@@ -295,9 +301,15 @@ private:
 uint8_t instanceBytes[sizeof(PubSubClientEngine)];
 static PubSubClientEngine *instance = nullptr;
 
+#ifdef ESP8266
 static void globalCallback(const char* topic, byte* payload, unsigned int length) {
   instance->callback(topic, payload, length);
 }
+#else
+static void globalCallback(char* topic, byte* payload, unsigned int length) {
+  instance->callback(topic, payload, length);
+}
+#endif
 
 Engine *createPubSubClientEngine(const Participant &part, PubSubClient* mqtt,
     const char *clientId, const char *username, const char *password) {
