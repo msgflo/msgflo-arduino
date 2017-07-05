@@ -4,7 +4,7 @@
   "description": "Msgflo support for Arduino (ESP8622 etc)",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "`node build.js`"
+    "build": "`node build.js examples/Button/Button.ino`"
   },
   "repository": {
     "type": "git",
