@@ -259,8 +259,8 @@ class PubSubClientEngine : public Engine, public Publisher {
         subscribeInPorts();
         const bool success = sendDiscovery(&participant);
         if (!success) {
-            Serial.println("failed to send Msgflo discovery");
-            Serial.print("limit = ");
+            Serial.println("Failed to send Msgflo discovery");
+            Serial.print("MQTT_MAX_PACKET_SIZE = ");
             Serial.println(MQTT_MAX_PACKET_SIZE);
         }
     }
