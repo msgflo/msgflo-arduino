@@ -8,25 +8,27 @@
 
 
 struct Config {
-  const String role = "mybutton";
+  const String prefix = "msgflo/arduino/";
+  const String role = "button/one";
 
-  const int ledPin = 5;
-  const int buttonPin = 2;
+  const int ledPin = LED_BUILTIN;
+  const int buttonPin = D5;
 
-  const String wifiSsid = "ssid";
-  const String wifiPassword = "password";
+  const char *wifiSsid = "mywifi";
+  const char *wifiPassword = NULL;
 
-  const char *mqttHost = "mqtt.bitraf.no";
+  const char *mqttHost = "test.mosquitto.org";
   const int mqttPort = 1883;
 
-  const char *mqttUsername = "myuser";
-  const char *mqttPassword = "mypassword";
+  const char *mqttUsername = NULL;
+  const char *mqttPassword = NULL;
 } cfg;
 
 WiFiClient wifiClient;
 PubSubClient mqttClient;
 msgflo::Engine *engine;
 msgflo::OutPort *buttonPort;
+msgflo::InPort *ledPort;
 long nextButtonCheck = 0;
 
 auto participant = msgflo::Participant("iot/Button", cfg.role);
@@ -38,8 +40,8 @@ void setup() {
   Serial.println();
   Serial.println();
 
-  Serial.printf("Configuring wifi: %s\r\n", cfg.wifiSsid.c_str());
-  WiFi.begin(cfg.wifiSsid.c_str(), cfg.wifiPassword.c_str());
+  Serial.printf("Configuring wifi: %s\r\n", cfg.wifiSsid);
+  WiFi.begin(cfg.wifiSsid, cfg.wifiPassword);
 
   // Provide a Font Awesome (http://fontawesome.io/icons/) icon for the component
   participant.icon = "toggle-on";
@@ -52,7 +54,14 @@ void setup() {
 
   engine = msgflo::pubsub::createPubSubClientEngine(participant, &mqttClient, clientId.c_str(), cfg.mqttUsername, cfg.mqttPassword);
 
-  buttonPort = engine->addOutPort("button-event", "any", cfg.role + "/event");
+  buttonPort = engine->addOutPort("button", "any", cfg.prefix+cfg.role+"/event");
+
+  ledPort = engine->addInPort("led", "boolean", cfg.prefix+cfg.role+"/led",
+  [](byte *data, int length) -> void {
+      const std::string in((char *)data, length);
+      const boolean on = (in == "1" || in == "true");
+      digitalWrite(cfg.ledPin, on);
+  });
 
   Serial.printf("Led pin: %d\r\n", cfg.ledPin);
   Serial.printf("Button pin: %d\r\n", cfg.buttonPin);
@@ -81,9 +90,7 @@ void loop() {
   if (millis() > nextButtonCheck) {
     const bool pressed = digitalRead(cfg.buttonPin);
     buttonPort->send(pressed ? "true" : "false");
-    nextButtonCheck += 100;
+    nextButtonCheck += 500;
   }
-
-//  digitalWrite(cfg.ledPin, !b);
 }
 
