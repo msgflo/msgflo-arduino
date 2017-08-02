@@ -1,7 +1,7 @@
 {
   "name": "msgflo-arduino",
-  "version": "0.1.0",
-  "description": "Msgflo support for Arduino (ESP8622 etc)",
+  "version": "0.1.1",
+  "description": "Msgflo support for Arduino WiFi/Ethernet devices",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "`node build.js examples/Button/Button.ino`",
@@ -18,7 +18,8 @@
     "fbp",
     "dataflow",
     "MQTT",
-    ""
+    "ESP8622",
+    "ESP32"
   ],
   "author": "",
   "license": "MIT",
