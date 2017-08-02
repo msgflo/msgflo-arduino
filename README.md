@@ -11,6 +11,7 @@ like home or factory automation, interactive art installations or similar.
 
 * Should work on all devices with `WifiClient` or `EthernetClient` support
 * Used for electronic door opener and sensors at [Bitraf hackerspace](https://bitraf.no)
+* Tested on ESP32 boards, like Wemos w/OLED
 * Tested on several ESP8266 boards, like NodeMCU, Wemos D1, Olimex MOD-WIFI-ESP8266.
 * Tested on Texas Instruments Connected Tiva (Cortex M4)
 * Supports Arduino IDE 1.5+
