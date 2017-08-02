@@ -1,7 +1,12 @@
 
 #include <WiFiClient.h>
 #include <WiFiClientSecure.h>
+
+#ifdef ARDUINO_ARCH_ESP8266
 #include <ESP8266WiFi.h>
+#else
+#include <Wifi.h>
+#endif
 
 #include <PubSubClient.h>
 #include <Msgflo.h>
@@ -12,7 +17,7 @@ struct Config {
   const String role = "button/one";
 
   const int ledPin = LED_BUILTIN;
-  const int buttonPin = D5;
+  const int buttonPin = 5;
 
   const char *wifiSsid = "mywifi";
   const char *wifiPassword = NULL;
