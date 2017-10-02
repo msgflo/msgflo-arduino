@@ -80,6 +80,16 @@ static
 const char *discoveryTopic = "fbp";
 
 
+String defaultTopic(const char *prefix, const String &role, const String &portId) {
+  String topic = "";
+  if (prefix) {
+    topic += prefix;
+  }
+  topic += role + "/" + portId;
+
+  return topic;
+}
+
 
 class PubSubClientEngine : public Engine, public Publisher {
 
@@ -88,6 +98,7 @@ private:
     const char *clientId = NULL;
     const char *username = NULL;
     const char *password = NULL;
+    const char *topicPrefix = NULL;
 
     int discoveryPeriod = 60; // seconds
     long lastDiscoverySent = 0; // milliseconds
@@ -128,6 +139,10 @@ public:
     }
     void setClientId(const char *id) {
         clientId = id;
+    }
+
+    void setTopicPrefix(const char *prefix) {
+        topicPrefix = prefix;
     }
 
     bool addParticipant(Participant &part) {
@@ -274,17 +289,27 @@ private:
     }
 
     void registerParticipants() {
-        // TODO: create default queue names
         for (auto part : participants) {
-          if (!part) {
-            break;
+          if (!part or !part->valid()) {
+            continue;
           }
           for (auto &p : part->inPorts) {
-
+            if (!p.valid()) {
+              break;
+            }
+            if(!p.queue.length()) {
+              p.queue = defaultTopic(topicPrefix, part->role, p.id);
+            }
           }
 
           for (auto &p : part->outPorts) {
+            if (!p.valid()) {
+              break;
+            }
             p.publisher = this;
+            if(!p.queue.length()) {
+              p.queue = defaultTopic(topicPrefix, part->role, p.id);
+            }
           }
         }
     }
