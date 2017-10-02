@@ -14,6 +14,7 @@ before_install:
 - git clone https://github.com/knolleary/pubsubclient.git PubSubClient
 - mkdir -p arduino-1.8.1/hardware/energia/
 - git clone https://github.com/energia/tivac-core.git arduino-1.8.1/hardware/energia/tivac
+- cd arduino-1.8.1/hardware/energia/tivac && git checkout bd293ce50e17f3e410b316f0bbc85bad8d950934 ; cd -
 - wget http://downloads.arduino.cc/gcc-arm-none-eabi-4.8.3-2014q1-linux64.tar.gz
 - tar -xf gcc-arm-none-eabi-4.8.3-2014q1-linux64.tar.gz
 - mkdir -p arduino-1.8.1/hardware/tools/arm-none-eabi-gcc
