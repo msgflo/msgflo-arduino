@@ -21,4 +21,3 @@ before_install:
 script:
 - export ARDUINO=`pwd`/arduino-1.8.1
 - npm run build
-- npm run build-tiva
