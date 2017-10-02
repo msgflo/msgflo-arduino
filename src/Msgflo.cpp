@@ -3,6 +3,30 @@
 #include <vector>
 
 namespace msgflo {
+
+OutPort* Participant::outport(const String &id, const String &type) {
+
+  if (lastOutPort < MSGFLO_MAX_PORTS) {
+    const int port = lastOutPort++;
+    outPorts[port].id = id;
+    outPorts[port].type = type;
+    return &outPorts[port];
+  } else {
+    return NULL;
+  }
+}
+
+InPort* Participant::inport(const String &id, const String &type, InPortCallback callback) {
+
+  if (lastInPort < MSGFLO_MAX_PORTS) {
+    const int port = lastInPort++;
+    inPorts[port] = InPort { id, type, "", callback };
+    return &inPorts[port];
+  } else {
+    return NULL;
+  }
+}
+
 namespace pubsub {
 
 static
@@ -48,152 +72,138 @@ static void globalCallback(const char* topic, byte* payload, unsigned int length
 static void globalCallback(char* topic, byte* payload, unsigned int length);
 #endif
 
-class Publisher {
-  public:
-    virtual void send(const String &queue, const String &payload) = 0;
-};
-
-struct PubSubOutPort : public OutPort {
-  public:
-    String id;
-    String type;
-    String queue;
-    Publisher *publisher;
-
-    PubSubOutPort& operator=(PubSubOutPort&& p) = default;
-
-    PubSubOutPort()
-        : publisher(nullptr)
-    {        
-    }
-
-    const bool valid() {
-        return publisher;
-    }
-
-    PubSubOutPort(const String &id, const String &type, const String &queue, Publisher *publisher) :
-      id(id), type(type), queue(queue), publisher(publisher) {
-    }
-
-    void toJson(String &s) const {
-      s += "{\"id\": \"";
-      s += id;
-      s += "\", \"type\": \"";
-      s += type;
-      s += "\", \"queue\": \"";
-      s += queue;
-      s += "\"}";
-    }
-
-    void send(const String &payload) {
-      publisher->send(queue, payload);
-    }
-};
-
-
-struct PubSubInPort : public InPort {
-  public:
-    String id;
-    String type;
-    String queue;
-    InPortCallback callback;
-    bool _valid;
-
-    PubSubInPort(PubSubInPort&& p) = default;
-    PubSubInPort& operator=(PubSubInPort&& p) = default;
-
-    PubSubInPort& operator=(PubSubInPort& p) = default;
-
-    PubSubInPort()
-        : _valid(false) {
-    }
-
-    const bool valid() {
-        return _valid;
-    }
-
-    PubSubInPort(const String &id, const String &type, const String &queue, InPortCallback callback) :
-      id(id), type(type), queue(queue), callback(callback), _valid(true) {
-    }
-
-    void toJson(String &s) const {
-      s += "{\"id\": \"";
-      s += id;
-      s += "\", \"type\": \"";
-      s += type;
-      s += "\", \"queue\": \"";
-      s += queue;
-      s += "\"}";
-    }
-
-};
 
 static
 const char *discoveryTopic = "fbp";
 
-#define MAX_PORTS 5
+
 
 class PubSubClientEngine : public Engine, public Publisher {
 
-    PubSubClient *mqtt;
-    const char *clientId;
-    const char *username;
-    const char *password;
+private:
+    PubSubClient *mqtt = NULL;
+    const char *clientId = NULL;
+    const char *username = NULL;
+    const char *password = NULL;
 
-    const Participant participant;
-    std::array<PubSubOutPort, MAX_PORTS> outPorts;
-    int8_t lastOutPort;
-    std::array<PubSubInPort, MAX_PORTS> inPorts;
-    int8_t lastInPort;
+    int discoveryPeriod = 60; // seconds
+    long lastDiscoverySent = 0; // milliseconds
 
-    long lastDiscoverySent; // milliseconds
+    std::array<Participant *, MSGFLO_MAX_PARTICIPANTS> participants;
+    int lastParticipant = 0;
 
-  public:
-    void send(const String &queue, const String &payload) {
-      mqtt->publish(queue.c_str(), payload.c_str());
+    // Legacy    
+    Participant defaultParticipant;
+
+public:
+    PubSubClientEngine()
+    {
+        addParticipant(defaultParticipant);
     }
 
-    PubSubClientEngine(const Participant &p, PubSubClient *mqtt, const char *id, const char *username, const char *password):
-        participant(p),
-        mqtt(mqtt),
-        clientId(id),
-        username(username),
-        password(password),
-        lastDiscoverySent(0),
-        lastOutPort(0),
-        lastInPort(0)
+    PubSubClientEngine(const Participant &p, PubSubClient *_mqtt, const char *id,
+                    const char *username, const char *password)
+      : defaultParticipant(p)
+      , clientId(id)
+      , username(username)
+      , password(password)
+      , lastDiscoverySent(0)
     {
+      addParticipant(defaultParticipant);
+      setClient(*_mqtt);
+    }
+
+public:
+    void setClient(PubSubClient &client) {
+      mqtt = &client;
       mqtt->setCallback(&globalCallback);
     }
 
-    OutPort* addOutPort(const String &id, const String &type, const String &queue) {
-      if (lastOutPort < MAX_PORTS) {
-        const int port = lastOutPort++;
-        outPorts[port] = PubSubOutPort(id, type, queue, this);
-        return &outPorts[port];
-      } else {
-        return NULL;
-      }
+    void setCredentials(const char *user, const char *pw) {
+        username = user;
+        password = pw;
+    }
+    void setClientId(const char *id) {
+        clientId = id;
     }
 
+    bool addParticipant(Participant &part) {
+      if (lastParticipant < MSGFLO_MAX_PARTICIPANTS) {
+        const int idx = lastParticipant++;
+        participants[idx] = &part;
+        return true;
+      }
+      return false;
+    }
+
+    // Legacy API
+    OutPort* addOutPort(const String &id, const String &type, const String &queue) {
+      OutPort *p = defaultParticipant.outport(id, type);
+      p->queue = queue;
+      return p;
+    }
+
+    // Legacy API
     InPort* addInPort(const String &id, const String &type, const String &queue, InPortCallback callback) {
-      if (lastInPort < MAX_PORTS) {
-        const int port = lastInPort++;
-        inPorts[port] = PubSubInPort(id, type, queue, callback);
-        return &inPorts[port];
-      } else {
-        return NULL;
+      InPort *p = defaultParticipant.inport(id, type, callback);
+      p->queue = queue;
+      return p;
+    }
+
+public:
+    void send(const String &queue, const String &payload) {
+      if (!mqtt) {
+        return;
+      }
+      mqtt->publish(queue.c_str(), payload.c_str());
+    }
+
+    void loop() {
+      if (!mqtt) {
+        return;
+      }
+      mqtt->loop();
+      const long currentTime = millis();
+      const long secondsSinceLastDiscovery = (currentTime - lastDiscoverySent)/1000;
+      if (secondsSinceLastDiscovery > discoveryPeriod/3) {
+        for (const auto part : participants ) {
+          if (!part) {
+            break;
+          }
+          sendDiscovery(part);
+        }
+        lastDiscoverySent = currentTime;
+      }
+
+      if (!mqtt->connected()) {
+        int state = mqtt->state();
+
+        Serial.print("Connecting...");
+        // This is blocking
+        if (connect()) {
+          Serial.println("ok");
+          onConnected();
+        } else {
+          Serial.println("failed");
+          printMqttState(mqtt->state());
+        }
       }
     }
 
     void callback(const char* topic, byte* payload, unsigned int length) {
-        for (auto &p : inPorts) {
+      for (const auto part : participants) {
+        if (!part) {
+          break;
+        }
+        for (const auto &p : part->inPorts) {
             if (p.queue == topic) {
                 p.callback(payload, length);
             }
         }
+      }
     }
 
+private:
     bool sendDiscovery(const Participant *p) {
       // fbp {"protocol":"discovery","command":"participant","payload":{"component":"dlock13/DoorLock","label":"Open the door","icon":"lightbulb-o","inports":[{"queue":"/bitraf/door/boxy4/open","type":"object","id":"open"}],"outports":[],"role":"boxy4","id":"boxy4"}}
       String discoveryMessage =
@@ -214,25 +224,25 @@ class PubSubClientEngine : public Engine, public Publisher {
       discoveryMessage += p->role;
 
       discoveryMessage += "\", \"outports\": [";
-      for (int i=0; i < outPorts.size(); i++) {
-        auto &p = outPorts[i];
-        if (p.valid()) {
+      for (int i=0; i < p->outPorts.size(); i++) {
+        const auto &port = p->outPorts[i];
+        if (port.valid()) {
             if (i > 0) {
                 discoveryMessage += ",";
             }
-            p.toJson(discoveryMessage);
+            port.toJson(discoveryMessage);
         }
       }
       discoveryMessage += "],";
 
       discoveryMessage += "\"inports\": [";
-      for (int i=0; i < inPorts.size(); i++) {
-        auto &p = inPorts[i];
-        if (p.valid()) {
+      for (int i=0; i < p->inPorts.size(); i++) {
+        const auto &port = p->inPorts[i];
+        if (port.valid()) {
             if (i > 0) {
                 discoveryMessage += ",";
             }
-            p.toJson(discoveryMessage);
+            port.toJson(discoveryMessage);
         }
       }
       discoveryMessage += "]";
@@ -248,47 +258,51 @@ class PubSubClientEngine : public Engine, public Publisher {
     }
 
     void subscribeInPorts() {
-        for (auto &p : inPorts) {
+      for (const auto part : participants) {
+        if (!part) {
+          break;
+        }
+        for (const auto &p : part->inPorts) {
             if (p.valid()) {
                 mqtt->subscribe(p.queue.c_str());
             }
         }
+      }
+    }
+
+    void registerParticipants() {
+        // TODO: create default queue names
+        for (auto part : participants) {
+          if (!part) {
+            break;
+          }
+          for (auto &p : part->inPorts) {
+
+          }
+
+          for (auto &p : part->outPorts) {
+            p.publisher = this;
+          }
+        }
     }
 
     void onConnected() {
-        subscribeInPorts();
-        const bool success = sendDiscovery(&participant);
+      registerParticipants();
+      subscribeInPorts();
+
+      for (const auto part : participants) {
+        if (!part) {
+          break;
+        }
+        const bool success = sendDiscovery(part);
         if (!success) {
             Serial.println("Failed to send Msgflo discovery");
             Serial.print("MQTT_MAX_PACKET_SIZE = ");
             Serial.println(MQTT_MAX_PACKET_SIZE);
         }
-    }
-
-    void loop() {
-      mqtt->loop();
-      const long currentTime = millis();
-      const long secondsSinceLastDiscovery = (currentTime - lastDiscoverySent)/1000;
-      if (secondsSinceLastDiscovery > participant.discoveryPeriod/3) {
-        sendDiscovery(&participant);
-        lastDiscoverySent = currentTime;
-      }
-
-      if (!mqtt->connected()) {
-        int state = mqtt->state();
-
-        Serial.print("Connecting...");
-        // This is blocking
-        if (connect()) {
-          Serial.println("ok");
-          onConnected();
-        } else {
-          Serial.println("failed");
-          printMqttState(mqtt->state());
-        }
       }
     }
-private:
+
     bool connect() {
         if (username) {
             return mqtt->connect(clientId, username, password);
@@ -311,23 +325,34 @@ static void globalCallback(char* topic, byte* payload, unsigned int length) {
 }
 #endif
 
-Engine *createPubSubClientEngine(const Participant &part, PubSubClient* mqtt,
-    const char *clientId, const char *username, const char *password) {
-
+Engine *createPubSubClientEngine(PubSubClient &mqtt) {
   if (instance != nullptr) {
     Serial.println("Double initialization of msgflo engine.");
     return instance;
   }
 
-  instance = new (instanceBytes) PubSubClientEngine(part, mqtt, clientId, username, password);
+  instance = new (instanceBytes) PubSubClientEngine();
+  instance->setClient(mqtt);
   return instance;
 }
 
 Engine *createPubSubClientEngine(const Participant &part, PubSubClient* mqtt,
     const char *clientId) {
 
-    return createPubSubClientEngine(part, mqtt, clientId, NULL, NULL);
+  auto instance = createPubSubClientEngine(*mqtt);
+  instance->setClientId(clientId);
+  return instance;
 }
+
+Engine *createPubSubClientEngine(const Participant &part, PubSubClient* mqtt,
+    const char *clientId, const char *username, const char *password) {
+
+  auto instance = createPubSubClientEngine(*mqtt);
+  instance->setClientId(clientId);
+  instance->setCredentials(username, password);
+  return instance;
+}
+
 
 };
 };
