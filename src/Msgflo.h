@@ -24,7 +24,7 @@ class Publisher {
 
 class OutPort {
   public:
-    String id;
+    String id = "";
     String type;
     String queue;
     Publisher *publisher = nullptr;
@@ -47,7 +47,7 @@ class OutPort {
     }
 
     bool valid() const {
-        return publisher;
+        return id && type ? true : false;
     }
 };
 
@@ -55,7 +55,7 @@ typedef std::function<void (byte*, int)> InPortCallback;
 
 class InPort {
   public:
-    String id;
+    String id = "";
     String type;
     String queue;
     InPortCallback callback;
@@ -72,7 +72,7 @@ class InPort {
     }
 
     bool valid() const {
-        return callback ? true : false;
+        return id && type && callback ? true : false;
     }
 
 };
@@ -121,6 +121,10 @@ public:
 
   OutPort* outport(const String &id, const String &type);
   InPort* inport(const String &id, const String &type, InPortCallback callback);
+
+  bool valid() const {
+    return (lastOutPort or lastInPort) and role; 
+  }
 };
 
 
@@ -136,6 +140,8 @@ class Engine {
 
     virtual void setClientId(const char *id) = 0;
     virtual void setCredentials(const char *user, const char *pw) = 0;
+
+    virtual void setTopicPrefix(const char *prefix) = 0;
 
     virtual void loop() = 0;
 };

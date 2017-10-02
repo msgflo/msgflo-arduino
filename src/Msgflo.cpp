@@ -20,7 +20,10 @@ InPort* Participant::inport(const String &id, const String &type, InPortCallback
 
   if (lastInPort < MSGFLO_MAX_PORTS) {
     const int port = lastInPort++;
-    inPorts[port] = InPort { id, type, "", callback };
+    inPorts[port].id = id;
+    inPorts[port].type = type;
+    inPorts[port].queue = "";
+    inPorts[port].callback = callback;
     return &inPorts[port];
   } else {
     return NULL;
@@ -167,8 +170,8 @@ public:
       const long secondsSinceLastDiscovery = (currentTime - lastDiscoverySent)/1000;
       if (secondsSinceLastDiscovery > discoveryPeriod/3) {
         for (const auto part : participants ) {
-          if (!part) {
-            break;
+          if (!part or !part->valid()) {
+            continue;
           }
           sendDiscovery(part);
         }
@@ -192,8 +195,8 @@ public:
 
     void callback(const char* topic, byte* payload, unsigned int length) {
       for (const auto part : participants) {
-        if (!part) {
-          break;
+        if (!part or !part->valid()) {
+          continue;
         }
         for (const auto &p : part->inPorts) {
             if (p.queue == topic) {
@@ -259,11 +262,11 @@ private:
 
     void subscribeInPorts() {
       for (const auto part : participants) {
-        if (!part) {
-          break;
+        if (!part or !part->valid()) {
+          continue;
         }
         for (const auto &p : part->inPorts) {
-            if (p.valid()) {
+            if (p.valid() and p.queue.length()) {
                 mqtt->subscribe(p.queue.c_str());
             }
         }
@@ -291,8 +294,8 @@ private:
       subscribeInPorts();
 
       for (const auto part : participants) {
-        if (!part) {
-          break;
+        if (!part or !part->valid()) {
+          continue;
         }
         const bool success = sendDiscovery(part);
         if (!success) {
