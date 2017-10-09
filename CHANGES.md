@@ -1,3 +1,7 @@
+# msgflo-arduino 0.2.1
+Released: 09.10.2017
+
+* Fix discovery message containing invalid ports
 
 # msgflo-arduino 0.2.0
 Released: 09.10.2017
