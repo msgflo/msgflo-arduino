@@ -176,7 +176,7 @@ void loop() {
       Serial.printf("Wifi connected: ip=%s\r\n", WiFi.localIP().toString().c_str());
     }
     connected = true;
-    engine->loop(); // FIXME: can/should this move out of this loop?
+    engine->loop();
   } else {
     if (connected) {
       connected = false;
