@@ -5,6 +5,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "`node build.js examples/Button/Button.ino`",
+    "build-multiple": "`node build.js examples/Multiple/Multiple.ino`",
     "build-tiva": "`node build.js examples/Ethernet/Ethernet.ino energia:tivac:EK-TM4C1294XL`"
 
   },
