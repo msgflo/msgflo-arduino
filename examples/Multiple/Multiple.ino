@@ -43,6 +43,7 @@ public:
 
     void setup() {
       pinMode(pin, OUTPUT);
+      digitalWrite(pin, inverted ? HIGH : LOW);
     }
 
     void loop() {
@@ -141,6 +142,8 @@ void setup() {
   Serial.begin(115200);
   delay(100);
   Serial.println();
+
+  ledOne.inverted = true;
 
   // Setup WIFI and MQTT
   WiFi.mode(WIFI_STA);
