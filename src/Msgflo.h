@@ -47,7 +47,7 @@ class OutPort {
     }
 
     bool valid() const {
-        return id && type ? true : false;
+        return id.length() && type.length();
     }
 };
 
@@ -72,7 +72,7 @@ class InPort {
     }
 
     bool valid() const {
-        return id && type && callback ? true : false;
+        return id.length() && type.length() && callback ? true : false;
     }
 
 };
