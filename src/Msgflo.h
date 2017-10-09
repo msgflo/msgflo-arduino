@@ -146,6 +146,24 @@ class Engine {
     virtual void loop() = 0;
 };
 
+
+class RunnableParticipant : public Participant {
+public:
+  RunnableParticipant(const String &c, const String &r)
+    : Participant(c, r)
+  {
+  }
+
+public:
+  // Called during Arduino setup()
+  virtual void setup() = 0;
+  // Called during Arduino loop()
+  virtual void loop() = 0;
+
+public:
+  virtual ~RunnableParticipant() {};
+};
+
 }; // namespace msgflo
 
 #include <PubSubClient.h>

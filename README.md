@@ -16,8 +16,6 @@ like home or factory automation, interactive art installations or similar.
 * Tested on Texas Instruments Connected Tiva (Cortex M4)
 * Supports Arduino IDE 1.5+
 
-Note: Some API changes may still occur in the future
-
 ## Prerequisites
 
 [PubSubClient](https://github.com/knolleary/pubsubclient).
@@ -39,3 +37,7 @@ This can only be done inside `PubSubClient.h`, until new [API is added](https://
 
 ## License
 `MIT`
+
+## Changelog
+
+[CHANGES.md](./CHANGES.md)
